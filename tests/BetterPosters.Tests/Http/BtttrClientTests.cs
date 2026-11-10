@@ -198,6 +198,28 @@ public sealed class BtttrClientTests
     }
 
     [Fact]
+    public async Task FetchValidatedPosterAsync_RedirectWithNoArtFallbackHeader_ReturnsNotFound()
+    {
+        var handler = new StubHttpMessageHandler(_ =>
+        {
+            var redirect = new HttpResponseMessage(HttpStatusCode.Found);
+            redirect.Headers.Location = new Uri("https://images.metahub.space/poster/medium/tt999999999/img");
+            redirect.Headers.TryAddWithoutValidation("x-bp-fallback", "noart");
+            return redirect;
+        });
+
+        var client = CreateClient(handler);
+
+        var result = await client.FetchValidatedPosterAsync(
+            new Uri("https://btttr.cc/poster/imdb/poster-default/tt999999999.jpg"),
+            CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("not_found", result.ReasonCode);
+        Assert.Equal(1, handler.CallCount);
+    }
+
+    [Fact]
     public async Task FetchValidatedPosterAsync_RedirectToHttpDowngrade_RejectsRedirect()
     {
         var handler = new StubHttpMessageHandler(_ =>

@@ -340,8 +340,16 @@ public sealed class BtttrClient : IBtttrClient
 
             if (IsRedirectStatusCode(response.StatusCode))
             {
+                var isNoArtFallback = response.Headers.TryGetValues("x-bp-fallback", out var fallbackValues)
+                    && System.Linq.Enumerable.Any(fallbackValues, v => string.Equals(v?.Trim(), "noart", StringComparison.OrdinalIgnoreCase));
                 var location = response.Headers.Location;
                 response.Dispose();
+
+                if (isNoArtFallback)
+                {
+                    _logger.LogDebug("Upstream btttr.cc indicated no artwork via x-bp-fallback=noart redirect (reason={ReasonCode}).", "not_found");
+                    return (null, "not_found", false, TimeSpan.Zero);
+                }
 
                 if (location is null || redirectHop == MaxRedirects)
                 {
