@@ -1,26 +1,27 @@
-# Proposed architecture
+# Architecture
 
-This is a design, not an implemented system. Confirm details against actual Jellyfin 12 interfaces before coding.
+Implemented and verified against **Jellyfin v12.4** (`net10.0`). See [docs/COMPATIBILITY.md](COMPATIBILITY.md) and [ADR 0001](adr/0001-jellyfin12-and-btttr-baseline.md) for baseline verification records.
 
 ## Boundaries
 
-`Native configuration -> validated poster options -> ID selection and URL builder -> btttr HTTP adapter -> Jellyfin remote image provider`
+`PluginConfiguration -> PluginConfigurationValidator -> PosterRequestOptions -> ProviderIdNormalizer & BtttrUrlBuilder -> BtttrClient -> BetterPostersImageProvider / PosterRefreshService`
 
-Optional refresh task reuses the same services and delegates image storage to verified Jellyfin APIs, not direct filesystem overwrites.
-
-- **Plugin composition:** new identity, native service registration, settings page.
-- **Domain:** supported item/ID model, option enums, deterministic request construction; no network or Jellyfin dependency where practical.
-- **HTTP adapter:** injected client, fixed HTTPS upstream, redirect checks, timeout/cancellation, rate-limit handling and streamed size limits. Determine image validation approach before buffering large responses.
-- **Provider:** maps Jellyfin Movie/Series and provider IDs to candidates; uses Jellyfin-supported ordering and caching; never forces priority through unrelated metadata mutation.
-- **Refresh service:** explicit scope, dry-run, bounded concurrency, deduplication/cache policy, item-level isolation and summary counts. No schedule on install.
-
-## Decisions to validate first
-
-1. Exact Jellyfin 12 NuGet package availability and target ABI; the server source targeting net10.0 is evidence, not proof that every plugin package exists under tag-like version strings.
-2. Native plugin configuration UI and remote image download contract.
-3. Current btttr endpoint, supported flags, languages, ratings and TMDB mapping. Do not assume legacy query parameters still work.
-4. How caching keys vary with ID, item type, language, overlays and rating source; no tokens in keys/logs.
-5. How to preserve an existing image when a replacement fails and avoid rewriting unchanged content.
-6. Disposable Jellyfin 12 integration image/artifact availability and licensed fixture strategy.
-
-Record decisions and evidence in docs/COMPATIBILITY.md and focused ADRs during implementation. Do not claim unresolved assumptions as facts.
+- **Plugin Composition (`src/BetterPosters/Plugin.cs`, `PluginServiceRegistrator.cs`):**
+  - Distinct plugin identity (`Jellyfin.Plugin.BetterPosters`, GUID `4c7a9d3e-6f12-4b88-9e41-2a5d8c0f7b19`).
+  - Implements `BasePlugin<PluginConfiguration>` and `IHasWebPages` serving the embedded `Configuration/configPage.html`.
+  - Registers `BtttrUrlBuilder`, `IBtttrClient` (`HttpClient` with `SocketsHttpHandler` configured with `AllowAutoRedirect = false` and `AutomaticDecompression`), `IPosterRefreshStateStore`, `IPosterRefreshGateway`, `IPosterRefreshService`, `IRemoteImageProvider`, and `IScheduledTask` via `IPluginServiceRegistrator`.
+- **Domain (`src/BetterPosters/Domain/`):**
+  - Pure, network-free domain model: `SupportedMediaKind`, `RatingSourceOption`, `PosterLanguageOption`, `PosterRequestOptions`, `ProviderIdNormalizer`, and `BtttrUrlBuilder`.
+  - Validates IMDb IDs (`^tt\d{7,10}$`) and numeric TMDB IDs (`^\d{1,12}$`).
+  - Constructs deterministic `https://btttr.cc/{routePrefix}/imdb/poster-default/{imdbId}.jpg` URLs and `/meta/{movie|series}/tmdb:{tmdbId}.json` metadata lookup URLs.
+- **HTTP Adapter (`src/BetterPosters/Http/`):**
+  - `BtttrClient` enforces fixed origin `https://btttr.cc`, manual redirect validation (up to 3 same-origin HTTPS hops; detects `302 Found` with `x-bp-fallback: noart` as `not_found` without following third-party redirects), bounded timeouts (`3`–`60`s), bounded retries (`0`–`4`) with `Retry-After` support on `429`/`502`/`503`/`504`, streamed byte caps (`15 MiB` for posters, `256 KiB` for metadata), `ImagePayloadValidator` magic-byte verification (`JPEG`, `PNG`, `WebP`), and thread-safe in-memory TMDB-to-IMDb resolution caching.
+- **Remote Image Provider (`src/BetterPosters/Providers/BetterPostersImageProvider.cs`):**
+  - Implements `IRemoteImageProvider` and `IHasOrder` (`Order => 0`).
+  - Supports `Movie` and `Series` (`ImageType.Primary` only); ignores all other item and image types.
+  - Uses IMDb ID directly when valid, or resolves via `BtttrClient.ResolveImdbIdFromTmdbAsync` when `EnableTmdbFallback` is enabled.
+- **Scheduled Refresh (`src/BetterPosters/ScheduledTasks/`):**
+  - `BetterPostersRefreshTask` (`IScheduledTask`, key `JellyfinPluginBetterPostersRefresh`) has zero default triggers.
+  - `PosterRefreshService` enforces `EnableScheduledRefreshOptIn`, `ScheduledRefreshDryRun`, explicit `ScopedLibraryIds`, `MaxItemsPerRun`, and `MaxConcurrency`.
+  - Downloads and validates the complete poster stream into memory before invoking `IProviderManager.SaveImage(item, stream, mimeType, ImageType.Primary, null, cancellationToken)` through `JellyfinPosterRefreshGateway`, ensuring failed fetches or invalid payloads never overwrite existing posters.
+  - `JsonPosterRefreshStateStore` atomically persists per-item URL fingerprints in `Jellyfin.Plugin.BetterPosters.RefreshState.json` to avoid redundant rewrites across runs.
