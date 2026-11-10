@@ -28,7 +28,7 @@ An unscheduled-by-default task can update selected movie/series libraries with t
 | URL generation | Deterministic tests for valid/invalid IDs, flags, languages, sources and encoding | Verified in `BtttrUrlBuilderTests` and `ProviderIdNormalizerTests` |
 | HTTP | Tests for 404, 429, 5xx, timeout, cancellation, redirects, oversized/non-image content | Verified in `BtttrClientTests` and `ImagePayloadValidatorTests` |
 | Fallback | Verified upstream evidence and tests, or explicit deferral with no invented URLs | Verified upstream `/meta/{movie|series}/tmdb:{id}.json` resolution in `BtttrClientTests`, `LiveBtttrContractTests`, and Jellyfin 12.4 smoke test |
-| Isolation | Unit tests offline; live tests opt-in; no real library access | Verified: 145 offline tests run with zero external network; 1 live test gated by `BETTER_POSTERS_RUN_LIVE_TESTS=1` |
+| Isolation | Unit tests offline; live tests opt-in; no real library access | Verified: 149 offline tests run with zero external network; 1 live test gated by `BETTER_POSTERS_RUN_LIVE_TESTS=1` |
 | Task | Dry-run causes zero writes; scope and opt-in enforced; failure retains old image | Verified in `PosterRefreshServiceTests`, `JsonPosterRefreshStateStoreTests`, and disposable Jellyfin 12.4 smoke test |
 | Packaging | Restore/build/tests pass; archive checked; actual Jellyfin 12 load verified | Verified via `scripts/package-plugin.sh` (`artifacts/better-posters_1.0.0.0.zip`) and `tests/integration/run-jellyfin12-smoke.sh` |
 | Documentation | Setup, settings, limits, privacy, licensing and real verification results | Documented in `README.md`, `docs/COMPATIBILITY.md`, `docs/ARCHITECTURE.md`, and `CHANGELOG.md` |

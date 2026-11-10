@@ -16,7 +16,7 @@ namespace Jellyfin.Plugin.BetterPosters.Tests.ScheduledTasks;
 public sealed class JsonPosterRefreshStateStoreTests
 {
     [Fact]
-    public async Task FlushAsync_PersistsAndReloadsFingerprintsAcrossInstances()
+    public async Task FlushAsync_PersistsAndReloadsFingerprintsAndCursorsAcrossInstances()
     {
         var tempRoot = Path.Combine(Path.GetTempPath(), "bp-statestore-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempRoot);
@@ -25,16 +25,21 @@ public sealed class JsonPosterRefreshStateStoreTests
             var paths = new StubPaths(tempRoot);
             var itemId = Guid.NewGuid();
             const string expectedFingerprint = "bp:v1:movie:tt1375666:poster:tag=auto:lang=en:rs=avg";
+            const string scopeKey = "11111111111111111111111111111111";
 
             var store1 = new JsonPosterRefreshStateStore(paths, NullLogger<JsonPosterRefreshStateStore>.Instance);
             store1.RecordFingerprint(itemId, expectedFingerprint);
+            store1.RecordScopeCursor(scopeKey, 250);
             await store1.FlushAsync(CancellationToken.None);
 
             var store2 = new JsonPosterRefreshStateStore(paths, NullLogger<JsonPosterRefreshStateStore>.Instance);
-            var found = store2.TryGetRecordedFingerprint(itemId, out var loadedFingerprint);
+            var foundFingerprint = store2.TryGetRecordedFingerprint(itemId, out var loadedFingerprint);
+            var foundCursor = store2.TryGetScopeCursor(scopeKey, out var loadedCursor);
 
-            Assert.True(found);
+            Assert.True(foundFingerprint);
             Assert.Equal(expectedFingerprint, loadedFingerprint);
+            Assert.True(foundCursor);
+            Assert.Equal(250, loadedCursor);
         }
         finally
         {

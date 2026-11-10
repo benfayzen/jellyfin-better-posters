@@ -322,12 +322,12 @@ public sealed class BtttrClient : IBtttrClient
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
                 _logger.LogWarning("Upstream request to btttr.cc timed out after {TimeoutMs} ms (reason={ReasonCode}).", timeout.TotalMilliseconds, "timeout");
-                return (null, "timeout", attempt > 0, CalculateBackoff(attempt, null));
+                return (null, "timeout", attempt > 0, CalculateBackoff(attempt));
             }
             catch (HttpRequestException ex)
             {
                 _logger.LogWarning(ex, "Upstream network error communicating with btttr.cc (reason={ReasonCode}).", "network_error");
-                return (null, "network_error", true, CalculateBackoff(attempt, null));
+                return (null, "network_error", true, CalculateBackoff(attempt));
             }
 
             // Verify final request URI in case an underlying handler automatically followed a redirect.
@@ -382,9 +382,9 @@ public sealed class BtttrClient : IBtttrClient
             {
                 var retryAfter = response.Headers.RetryAfter;
                 response.Dispose();
-                var delay = CalculateBackoff(attempt, retryAfter);
+                var canRetryWithinBudget = TryCalculateRetryDelay(attempt, retryAfter, out var delay);
                 _logger.LogWarning("Rate limited by btttr.cc (HTTP 429, reason={ReasonCode}).", "rate_limited");
-                return (null, "rate_limited", true, delay);
+                return (null, "rate_limited", canRetryWithinBudget, delay);
             }
 
             if ((int)response.StatusCode >= 500)
@@ -392,7 +392,7 @@ public sealed class BtttrClient : IBtttrClient
                 var statusCode = (int)response.StatusCode;
                 response.Dispose();
                 _logger.LogWarning("Transient upstream error from btttr.cc (HTTP {StatusCode}, reason={ReasonCode}).", statusCode, "upstream_error");
-                return (null, "upstream_error", true, CalculateBackoff(attempt, null));
+                return (null, "upstream_error", true, CalculateBackoff(attempt));
             }
 
             response.Dispose();
@@ -411,22 +411,51 @@ public sealed class BtttrClient : IBtttrClient
             or HttpStatusCode.PermanentRedirect;
     }
 
-    private TimeSpan CalculateBackoff(int attempt, RetryConditionHeaderValue? retryAfter)
+    private bool TryCalculateRetryDelay(int attempt, RetryConditionHeaderValue? retryAfter, out TimeSpan delay)
     {
-        if (retryAfter?.Delta is { } delta && delta > TimeSpan.Zero)
+        if (retryAfter?.Delta is { } delta)
         {
-            return delta <= MaxRetryDelayCap ? delta : MaxRetryDelayCap;
+            if (delta <= TimeSpan.Zero)
+            {
+                delay = TimeSpan.Zero;
+                return true;
+            }
+
+            if (delta > MaxRetryDelayCap)
+            {
+                delay = TimeSpan.Zero;
+                return false;
+            }
+
+            delay = delta;
+            return true;
         }
 
         if (retryAfter?.Date is { } date)
         {
             var diff = date - DateTimeOffset.UtcNow;
-            if (diff > TimeSpan.Zero)
+            if (diff <= TimeSpan.Zero)
             {
-                return diff <= MaxRetryDelayCap ? diff : MaxRetryDelayCap;
+                delay = TimeSpan.Zero;
+                return true;
             }
+
+            if (diff > MaxRetryDelayCap)
+            {
+                delay = TimeSpan.Zero;
+                return false;
+            }
+
+            delay = diff;
+            return true;
         }
 
+        delay = CalculateBackoff(attempt);
+        return true;
+    }
+
+    private TimeSpan CalculateBackoff(int attempt)
+    {
         var factor = 1 << Math.Clamp(attempt, 0, 4);
         var computed = TimeSpan.FromMilliseconds(_retryBaseDelay.TotalMilliseconds * factor);
         return computed <= MaxRetryDelayCap ? computed : MaxRetryDelayCap;

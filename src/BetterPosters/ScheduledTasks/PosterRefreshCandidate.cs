@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Jellyfin.Plugin.BetterPosters.Domain;
 
 namespace Jellyfin.Plugin.BetterPosters.ScheduledTasks;
@@ -15,3 +16,11 @@ public sealed record PosterRefreshCandidate(
     bool IsImageFetcherEnabled,
     bool HasExistingPrimaryImage,
     string InitialPosterMarker = "");
+
+/// <summary>
+/// Represents a bounded page of candidate items and the next traversal cursor for a scoped refresh run.
+/// </summary>
+public sealed record PosterRefreshCandidateSlice(
+    IReadOnlyList<PosterRefreshCandidate> Candidates,
+    int NextStartIndex,
+    int SkippedOverflowCount);

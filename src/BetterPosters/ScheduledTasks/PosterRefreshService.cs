@@ -83,8 +83,12 @@ public sealed class PosterRefreshService : IPosterRefreshService
         var maxConcurrency = Math.Clamp(config.MaxConcurrency, 1, PluginConfiguration.MaxAllowedConcurrency);
         var forceReplace = config.ForceReplaceUnchanged;
 
-        var allCandidates = _gateway.GetScopedCandidates(scopedLibraryGuids);
-        if (allCandidates.Count == 0)
+        var scopeKey = BuildScopeKey(scopedLibraryGuids);
+        var startIndex = _stateStore.TryGetScopeCursor(scopeKey, out var savedCursor) ? savedCursor : 0;
+
+        var slice = _gateway.GetScopedCandidates(scopedLibraryGuids, startIndex, maxItems, cancellationToken);
+        var boundedCandidates = slice.Candidates;
+        if (boundedCandidates.Count == 0)
         {
             IncrementReason(reasonCounts, "no_matching_items");
             _logger.LogInformation(
@@ -95,8 +99,7 @@ public sealed class PosterRefreshService : IPosterRefreshService
             return new PosterRefreshSummary(isDryRun ? "completed_dry_run" : "completed", isDryRun, 0, 0, 0, 0, 0, reasonCounts);
         }
 
-        var boundedCandidates = allCandidates.Take(maxItems).ToList();
-        var skippedOverflowCount = Math.Max(0, allCandidates.Count - boundedCandidates.Count);
+        var skippedOverflowCount = Math.Max(0, slice.SkippedOverflowCount);
         if (skippedOverflowCount > 0)
         {
             reasonCounts.AddOrUpdate("max_items_per_run_reached", skippedOverflowCount, (_, current) => current + skippedOverflowCount);
@@ -112,52 +115,75 @@ public sealed class PosterRefreshService : IPosterRefreshService
         using var semaphore = new SemaphoreSlim(maxConcurrency, maxConcurrency);
         var tasks = new List<Task>(totalToProcess);
 
-        foreach (var candidate in boundedCandidates)
+        try
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            foreach (var candidate in boundedCandidates)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
 
-            await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-            tasks.Add(Task.Run(
-                async () =>
-                {
-                    try
+                await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                tasks.Add(Task.Run(
+                    async () =>
                     {
-                        var (outcomeCategory, reasonCode) = await ProcessSingleCandidateAsync(
-                            candidate,
-                            options,
-                            isDryRun,
-                            forceReplace,
-                            cancellationToken).ConfigureAwait(false);
-
-                        IncrementReason(reasonCounts, reasonCode);
-
-                        switch (outcomeCategory)
+                        try
                         {
-                            case OutcomeCategory.Updated:
-                                Interlocked.Increment(ref updatedCount);
-                                break;
-                            case OutcomeCategory.DryRunWouldUpdate:
-                                Interlocked.Increment(ref dryRunWouldUpdateCount);
-                                break;
-                            case OutcomeCategory.Skipped:
-                                Interlocked.Increment(ref skippedCount);
-                                break;
-                            case OutcomeCategory.Failed:
-                                Interlocked.Increment(ref failedCount);
-                                break;
+                            var (outcomeCategory, reasonCode) = await ProcessSingleCandidateAsync(
+                                candidate,
+                                options,
+                                isDryRun,
+                                forceReplace,
+                                cancellationToken).ConfigureAwait(false);
+
+                            IncrementReason(reasonCounts, reasonCode);
+
+                            switch (outcomeCategory)
+                            {
+                                case OutcomeCategory.Updated:
+                                    Interlocked.Increment(ref updatedCount);
+                                    break;
+                                case OutcomeCategory.DryRunWouldUpdate:
+                                    Interlocked.Increment(ref dryRunWouldUpdateCount);
+                                    break;
+                                case OutcomeCategory.Skipped:
+                                    Interlocked.Increment(ref skippedCount);
+                                    break;
+                                case OutcomeCategory.Failed:
+                                    Interlocked.Increment(ref failedCount);
+                                    break;
+                            }
                         }
-                    }
-                    finally
-                    {
-                        var done = Interlocked.Increment(ref completedCount);
-                        progress?.Report((double)done / totalToProcess * 100.0);
-                        semaphore.Release();
-                    }
-                },
-                cancellationToken));
+                        finally
+                        {
+                            var done = Interlocked.Increment(ref completedCount);
+                            progress?.Report((double)done / totalToProcess * 100.0);
+                            semaphore.Release();
+                        }
+                    },
+                    CancellationToken.None));
+            }
+        }
+        finally
+        {
+            if (tasks.Count > 0)
+            {
+                try
+                {
+                    await Task.WhenAll(tasks).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    // Drained in-flight workers after cancellation; outer flow will propagate cancellation.
+                }
+            }
         }
 
-        await Task.WhenAll(tasks).ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (!isDryRun)
+        {
+            _stateStore.RecordScopeCursor(scopeKey, slice.NextStartIndex);
+        }
+
         await _stateStore.FlushAsync(cancellationToken).ConfigureAwait(false);
 
         var statusReason = isDryRun ? "completed_dry_run" : "completed";
@@ -199,6 +225,11 @@ public sealed class PosterRefreshService : IPosterRefreshService
         }
 
         return result;
+    }
+
+    private static string BuildScopeKey(IReadOnlyCollection<Guid> scopedLibraryGuids)
+    {
+        return string.Join(",", scopedLibraryGuids.OrderBy(id => id).Select(id => id.ToString("N")));
     }
 
     private static void IncrementReason(ConcurrentDictionary<string, int> counts, string reason)

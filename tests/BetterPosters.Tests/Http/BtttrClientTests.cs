@@ -91,6 +91,48 @@ public sealed class BtttrClientTests
     }
 
     [Fact]
+    public async Task FetchValidatedPosterAsync_429WithRetryAfterExceedingCap_DoesNotRetryEarlyAndReturnsRateLimited()
+    {
+        var handler = new StubHttpMessageHandler(_ =>
+        {
+            var rateLimited = new HttpResponseMessage(HttpStatusCode.TooManyRequests);
+            rateLimited.Headers.RetryAfter = new RetryConditionHeaderValue(TimeSpan.FromSeconds(60));
+            return rateLimited;
+        });
+
+        var client = CreateClient(handler, maxRetries: 3);
+
+        var result = await client.FetchValidatedPosterAsync(
+            new Uri("https://btttr.cc/poster/imdb/poster-default/tt1375666.jpg"),
+            CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("rate_limited", result.ReasonCode);
+        Assert.Equal(1, handler.CallCount);
+    }
+
+    [Fact]
+    public async Task FetchValidatedPosterAsync_429WithRetryAfterDateExceedingCap_DoesNotRetryEarlyAndReturnsRateLimited()
+    {
+        var handler = new StubHttpMessageHandler(_ =>
+        {
+            var rateLimited = new HttpResponseMessage(HttpStatusCode.TooManyRequests);
+            rateLimited.Headers.RetryAfter = new RetryConditionHeaderValue(DateTimeOffset.UtcNow.AddSeconds(60));
+            return rateLimited;
+        });
+
+        var client = CreateClient(handler, maxRetries: 3);
+
+        var result = await client.FetchValidatedPosterAsync(
+            new Uri("https://btttr.cc/poster/imdb/poster-default/tt1375666.jpg"),
+            CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("rate_limited", result.ReasonCode);
+        Assert.Equal(1, handler.CallCount);
+    }
+
+    [Fact]
     public async Task FetchValidatedPosterAsync_503Then200_RetriesAndSucceeds()
     {
         var calls = 0;

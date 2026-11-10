@@ -69,7 +69,7 @@ This repository is private. Do **not** configure a GitHub raw URL with embedded 
 dotnet restore Jellyfin.Plugin.BetterPosters.sln
 dotnet build Jellyfin.Plugin.BetterPosters.sln --configuration Release --no-restore
 
-# 2. Run offline unit and mocked HTTP contract tests (145 tests)
+# 2. Run offline unit and mocked HTTP contract tests (149 tests)
 dotnet test Jellyfin.Plugin.BetterPosters.sln --configuration Release --no-build
 
 # 3. Run opt-in live upstream contract check against https://btttr.cc

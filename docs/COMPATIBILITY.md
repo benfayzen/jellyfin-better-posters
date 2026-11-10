@@ -135,8 +135,8 @@ https://btttr.cc/{routePrefix}/imdb/poster-default/{imdbId}.jpg[?{query}]
 - **Output Archive:** `artifacts/better-posters_1.0.0.0.zip`
 - **Archive Contents:** Exclusively `Jellyfin.Plugin.BetterPosters.dll` (with embedded `configPage.html`) and `meta.json` (`targetAbi: "12.4.0.0"`, `guid: "4c7a9d3e-6f12-4b88-9e41-2a5d8c0f7b19"`). Zero host `Jellyfin.*`, `MediaBrowser.*`, or `Microsoft.Extensions.*` assemblies are bundled.
 - **Verified Checksums (`1.0.0.0` build):**
-  - `SHA256`: `a76edda497456c47e1108b23f9b10b7d33f85b42ab9cee787a9be98a4300af7f`
-  - `MD5`: `92b4ed6830afd86ef107b44434872210`
+  - `SHA256`: `3b5183bfc261f13cd7a5237a729cf41d8e9fa2a4430247214c9a129d35f072d7`
+  - `MD5`: `8567ec76c0a16bf513d2993c3e3b2b0b`
 
 ## 8. Executed Verification Evidence
 
@@ -144,7 +144,7 @@ All four verification tiers were executed and verified on **2026-11-10**:
 
 1. **Offline Unit & Mocked HTTP Contract Tests (`dotnet test`):**
    - Command: `dotnet test Jellyfin.Plugin.BetterPosters.sln --configuration Release`
-   - Result: **145 passed, 0 failed, 0 warnings** (1 opt-in live test skipped by default).
+   - Result: **149 passed, 0 failed, 0 warnings** (1 opt-in live test skipped by default).
    - Coverage: IMDb/TMDB ID normalization, deterministic URL construction across all 16 route prefixes (`poster`..`poster-nqa`), 8 rating sources, 20 languages, configuration validation, `BtttrClient` mocked HTTP status/retry/rate-limit/redirect/`x-bp-fallback: noart`/magic-byte/size-limit checks, `BetterPostersImageProvider` Movie/Series filtering and TMDB fallback, and `PosterRefreshService` opt-in/dry-run/scope/non-destructive replacement/fingerprint state persistence.
 2. **Opt-In Live Upstream Contract Check (`BETTER_POSTERS_RUN_LIVE_TESTS=1`):**
    - Command: `BETTER_POSTERS_RUN_LIVE_TESTS=1 dotnet test Jellyfin.Plugin.BetterPosters.sln --filter "FullyQualifiedName~LiveBtttrContractTests"`

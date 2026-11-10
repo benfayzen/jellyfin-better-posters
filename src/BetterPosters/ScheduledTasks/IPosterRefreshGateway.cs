@@ -12,9 +12,13 @@ namespace Jellyfin.Plugin.BetterPosters.ScheduledTasks;
 public interface IPosterRefreshGateway
 {
     /// <summary>
-    /// Queries Movie and Series items belonging to the explicitly scoped library folder IDs.
+    /// Queries a bounded slice of Movie and Series items belonging to the explicitly scoped library folder IDs.
     /// </summary>
-    IReadOnlyList<PosterRefreshCandidate> GetScopedCandidates(IReadOnlyCollection<Guid> scopedLibraryIds);
+    PosterRefreshCandidateSlice GetScopedCandidates(
+        IReadOnlyCollection<Guid> scopedLibraryIds,
+        int startIndex,
+        int maxItems,
+        CancellationToken cancellationToken);
 
     /// <summary>
     /// Persists an already-downloaded and validated primary poster stream for the specified item via Jellyfin's verified <c>IProviderManager.SaveImage</c> API.

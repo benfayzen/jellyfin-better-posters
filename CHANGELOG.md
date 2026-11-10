@@ -19,5 +19,5 @@
 ### Packaging, CI, and Verification
 
 - Add `scripts/package-plugin.sh` producing `artifacts/better-posters_1.0.0.0.zip` (`Jellyfin.Plugin.BetterPosters.dll` and `meta.json` only).
-- Add 145 offline unit and mocked HTTP contract tests, 1 opt-in live `btttr.cc` contract test (`BETTER_POSTERS_RUN_LIVE_TESTS=1`), and an automated disposable loopback Jellyfin 12.4 server smoke test (`tests/integration/run-jellyfin12-smoke.sh`).
+- Add 149 offline unit and mocked HTTP contract tests, 1 opt-in live `btttr.cc` contract test (`BETTER_POSTERS_RUN_LIVE_TESTS=1`), and an automated disposable loopback Jellyfin 12.4 server smoke test (`tests/integration/run-jellyfin12-smoke.sh`).
 - Add GitHub Actions CI workflow (`.github/workflows/ci.yml`).
