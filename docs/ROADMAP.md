@@ -1,25 +1,21 @@
 # Development roadmap
 
-## 0 — Discovery and compatibility gate
+## 0 — Discovery and compatibility gate (Completed)
 
-Verify official Jellyfin 12 plugin contracts/packages and btttr API behavior. Record exact version pins, sources, endpoint contract and licensing decision. If required packages are unavailable, investigate supported source-build/reference alternatives without retargeting to old Jellyfin. Report a real blocker if none work.
+Verified official Jellyfin 12.4 (`12.4.0`, `net10.0`, commit `83d0d0e7f76e23e2e085c8ff67d28b772d35967d`) plugin contracts/packages on `.NET SDK 10.0.403` and live `btttr.cc` upstream behavior (`/configure`, `/manifest.json`, `/poster.../imdb/poster-default/{id}.jpg`, `/meta/{movie|series}/tmdb:{id}.json`, and `x-bp-fallback: noart` redirect semantics). Recorded in [docs/COMPATIBILITY.md](COMPATIBILITY.md) and [ADR 0001](adr/0001-jellyfin12-and-btttr-baseline.md).
 
-## 1 — First tested vertical slice
+## 1 — First tested vertical slice (Completed)
 
-Create the solution, SDK/package pins and test project only after discovery. Implement ID validation and one verified movie request with tests, then a native plugin identity/provider that loads in disposable Jellyfin 12. Add actual restore/build/test CI.
+Created `Jellyfin.Plugin.BetterPosters.sln`, `global.json`, `Directory.Build.props`, `Directory.Packages.props`, domain ID normalization and URL builder, and GitHub Actions CI workflow (`.github/workflows/ci.yml`).
 
-## 2 — MVP provider
+## 2 — MVP provider (Completed)
 
-Add series, settings UI, supported overlay/source/language options, verified TMDB fallback, cancellation, HTTP failure handling and deterministic regression tests. Complete provider acceptance matrix before bulk operations.
+Implemented `Plugin`, `PluginConfiguration`, `PluginConfigurationValidator`, embedded `configPage.html`, `BtttrClient`, `ImagePayloadValidator`, and `BetterPostersImageProvider` supporting `Movie` and `Series` (`ImageType.Primary` only) with verified TMDB fallback and comprehensive unit/HTTP contract tests.
 
-## 3 — Safe scheduled refresh
+## 3 — Safe scheduled refresh (Completed)
 
-Implement opt-in library scope, dry-run, no default triggers, bounded execution, progress and summary reasons. Prove failed fetch/cancellation cannot destroy an existing poster. Document restoration limitations.
+Implemented `BetterPostersRefreshTask` (`IScheduledTask` with zero default triggers), `PosterRefreshService`, `JellyfinPosterRefreshGateway`, and `JsonPosterRefreshStateStore` with explicit opt-in, dry-run default, library scoping, bounded item count/concurrency, download-and-validate-before-save semantics, and per-item URL fingerprint deduplication.
 
-## 4 — Delivery
+## 4 — Delivery (Completed)
 
-Reproducible packaging, dependency/archive inspection, checksums, real Jellyfin 12 load test, manual private installation guide and changelog. No public catalog or production installation without separate owner approval.
-
-## Bootstrap state
-
-Only project documents, agent instructions and GitHub templates exist. No SDK was installed, no plugin code copied, no package versions guessed, no production server touched, and no development agent launched by the bootstrap task.
+Implemented reproducible packaging (`scripts/package-plugin.sh` producing `artifacts/better-posters_1.0.0.0.zip`), archive/dependency validation, opt-in live upstream contract test (`LiveBtttrContractTests`), and end-to-end disposable Jellyfin 12.4 loopback smoke test (`tests/integration/run-jellyfin12-smoke.sh`).
