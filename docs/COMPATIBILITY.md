@@ -58,10 +58,6 @@ Checked directly against `jellyfin/jellyfin` commit `83d0d0e7f76e23e2e085c8ff67d
 - **Remote Image Provider:**
   - `MediaBrowser.Controller.Providers.IRemoteImageProvider` (`Supports(BaseItem)`, `GetSupportedImages(BaseItem)`, `GetImages(BaseItem, CancellationToken)`, `GetImageResponse(string, CancellationToken)`)
   - `MediaBrowser.Controller.Providers.IHasOrder` (`Order => 0`)
-- **Scheduled Task & Safe Image Saving:**
-  - `MediaBrowser.Model.Tasks.IScheduledTask` (`Name`, `Key`, `Description`, `Category`, `ExecuteAsync(IProgress<double>, CancellationToken)`, `GetDefaultTriggers()`)
-  - `MediaBrowser.Controller.Providers.IProviderManager.SaveImage(BaseItem item, Stream source, string mimeType, ImageType type, int? imageIndex, CancellationToken cancellationToken)` — verified in `MediaBrowser.Providers/Manager/ProviderManager.cs`. Passing an already-downloaded and validated `Stream` ensures Jellyfin never overwrites an existing image if the upstream download or image validation fails.
-  - `MediaBrowser.Controller.BaseItemManager.IBaseItemManager.IsImageFetcherEnabled(BaseItem baseItem, TypeOptions? libraryTypeOptions, string name)`
 
 ## 5. Verified `btttr.cc` Upstream Contract
 
@@ -135,17 +131,17 @@ https://btttr.cc/{routePrefix}/imdb/poster-default/{imdbId}.jpg[?{query}]
 - **Output Archive:** `artifacts/better-posters_1.0.0.0.zip`
 - **Archive Contents:** Exclusively `Jellyfin.Plugin.BetterPosters.dll` (with embedded `configPage.html`) and `meta.json` (`targetAbi: "12.4.0.0"`, `guid: "4c7a9d3e-6f12-4b88-9e41-2a5d8c0f7b19"`). Zero host `Jellyfin.*`, `MediaBrowser.*`, or `Microsoft.Extensions.*` assemblies are bundled.
 - **Verified Checksums (`1.0.0.0` build):**
-  - `SHA256`: `3b5183bfc261f13cd7a5237a729cf41d8e9fa2a4430247214c9a129d35f072d7`
-  - `MD5`: `8567ec76c0a16bf513d2993c3e3b2b0b`
+  - `SHA256`: `8f039a011bf43d689242ba2c1b9447e9e9affe8a4a57327ce19f58c978385dac`
+  - `MD5`: `195f324d73b8179655d6206a6b2c4d27`
 
 ## 8. Executed Verification Evidence
 
-All four verification tiers were executed and verified on **2026-11-10**:
+All verification tiers were executed and verified on **2026-11-10**:
 
 1. **Offline Unit & Mocked HTTP Contract Tests (`dotnet test`):**
    - Command: `dotnet test Jellyfin.Plugin.BetterPosters.sln --configuration Release`
-   - Result: **149 passed, 0 failed, 0 warnings** (1 opt-in live test skipped by default).
-   - Coverage: IMDb/TMDB ID normalization, deterministic URL construction across all 16 route prefixes (`poster`..`poster-nqa`), 8 rating sources, 20 languages, configuration validation, `BtttrClient` mocked HTTP status/retry/rate-limit/redirect/`x-bp-fallback: noart`/magic-byte/size-limit checks, `BetterPostersImageProvider` Movie/Series filtering and TMDB fallback, and `PosterRefreshService` opt-in/dry-run/scope/non-destructive replacement/fingerprint state persistence.
+   - Result: **133 passed, 0 failed, 0 warnings** (1 opt-in live test skipped by default).
+   - Coverage: IMDb/TMDB ID normalization, deterministic URL construction across all 16 route prefixes (`poster`..`poster-nqa`), 8 rating sources, 20 languages, configuration validation, `BtttrClient` mocked HTTP status/retry/rate-limit/redirect/`x-bp-fallback: noart`/magic-byte/size-limit checks, and `BetterPostersImageProvider` Movie/Series filtering and TMDB fallback.
 2. **Opt-In Live Upstream Contract Check (`BETTER_POSTERS_RUN_LIVE_TESTS=1`):**
    - Command: `BETTER_POSTERS_RUN_LIVE_TESTS=1 dotnet test Jellyfin.Plugin.BetterPosters.sln --filter "FullyQualifiedName~LiveBtttrContractTests"`
    - Result: **1 passed, 0 failed**.
@@ -157,7 +153,6 @@ All four verification tiers were executed and verified on **2026-11-10**:
      - Plugin discovered and loaded with `Status: Active` (`Id: 4c7a9d3e6f124b889e412a5d8c0f7b19`, `Version: 1.0.0.0`).
      - Embedded configuration HTML page served at `/web/ConfigurationPage?name=Better%20Posters`.
      - Default configuration retrieved, modified, saved, and round-tripped via `/Plugins/{pluginId}/Configuration`.
-     - Scheduled task `JellyfinPluginBetterPostersRefresh` (`Update Better Posters`) registered with `0` default triggers.
+     - Verified no Better Posters scheduled task is registered in `/ScheduledTasks`.
      - `IRemoteImageProvider` returned the expected `btttr.cc` candidate URL for both an IMDb-tagged movie (`tt1375666`) and a TMDB-only movie (`157336` -> `tt0816692`).
-     - Scheduled refresh in dry-run mode completed with zero image writes.
-     - Scheduled refresh in opt-in live mode downloaded, validated, and saved the primary poster (`ImageTags.Primary`) and persisted item fingerprints to `Jellyfin.Plugin.BetterPosters.RefreshState.json`.
+     - `POST /Items/{id}/RemoteImages/Download` downloaded, validated, and saved the primary poster (`ImageTags.Primary`) via `BetterPostersImageProvider.GetImageResponse`.

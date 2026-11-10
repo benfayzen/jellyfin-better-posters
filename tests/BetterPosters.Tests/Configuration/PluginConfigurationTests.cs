@@ -20,14 +20,8 @@ public sealed class PluginConfigurationTests
         Assert.Equal(PosterRatingSource.Average, config.RatingSource);
         Assert.Equal(PosterLanguage.English, config.Language);
         Assert.True(config.EnableTmdbFallback);
-
-        // Opt-in refresh safety defaults
-        Assert.False(config.EnableScheduledRefreshOptIn);
-        Assert.True(config.ScheduledRefreshDryRun);
-        Assert.Empty(config.ScopedLibraryIds);
-        Assert.Equal(250, config.MaxItemsPerRun);
-        Assert.Equal(2, config.MaxConcurrency);
-        Assert.False(config.ForceReplaceUnchanged);
+        Assert.Equal(15, config.RequestTimeoutSeconds);
+        Assert.Equal(2, config.MaxRetryAttempts);
     }
 
     [Fact]
@@ -37,9 +31,6 @@ public sealed class PluginConfigurationTests
         {
             Language = PosterLanguage.German,
             RatingSource = PosterRatingSource.RottenTomatoes,
-            ScopedLibraryIds = [Guid.NewGuid().ToString("N")],
-            MaxItemsPerRun = 100,
-            MaxConcurrency = 3,
             RequestTimeoutSeconds = 20,
             MaxRetryAttempts = 2
         };
@@ -49,26 +40,6 @@ public sealed class PluginConfigurationTests
 
         Assert.Equal(PosterLanguage.German, options.Language);
         Assert.Equal(PosterRatingSource.RottenTomatoes, options.RatingSource);
-    }
-
-    [Theory]
-    [InlineData(0)]
-    [InlineData(5001)]
-    public void ValidateOrThrow_InvalidMaxItemsPerRun_ThrowsArgumentOutOfRangeException(int invalidMaxItems)
-    {
-        var config = new PluginConfiguration { MaxItemsPerRun = invalidMaxItems };
-
-        Assert.Throws<ArgumentOutOfRangeException>(() => config.ValidateOrThrow());
-    }
-
-    [Theory]
-    [InlineData(0)]
-    [InlineData(9)]
-    public void ValidateOrThrow_InvalidMaxConcurrency_ThrowsArgumentOutOfRangeException(int invalidConcurrency)
-    {
-        var config = new PluginConfiguration { MaxConcurrency = invalidConcurrency };
-
-        Assert.Throws<ArgumentOutOfRangeException>(() => config.ValidateOrThrow());
     }
 
     [Theory]
@@ -89,17 +60,6 @@ public sealed class PluginConfigurationTests
         var config = new PluginConfiguration { MaxRetryAttempts = invalidRetries };
 
         Assert.Throws<ArgumentOutOfRangeException>(() => config.ValidateOrThrow());
-    }
-
-    [Fact]
-    public void ValidateOrThrow_InvalidScopedLibraryId_ThrowsArgumentException()
-    {
-        var config = new PluginConfiguration
-        {
-            ScopedLibraryIds = ["not-a-guid"]
-        };
-
-        Assert.Throws<ArgumentException>(() => config.ValidateOrThrow());
     }
 
     [Fact]
