@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Better Posters</title>
+</head>
+<body>
+    <div id="BetterPostersConfigPage"
+         data-role="page"
+         class="page type-interior pluginConfigurationPage"
+         data-require="emby-input,emby-button,emby-select,emby-checkbox">
+        <div data-role="content">
+            <div class="content-primary">
+                <form id="BetterPostersConfigForm">
+                    <div class="sectionTitleContainer flex align-items-center">
+                        <h2 class="sectionTitle">Better Posters for Jellyfin 12</h2>
+                    </div>
+                    <p class="fieldDescription">
+                        Fetches customizable primary posters for Movies and Series from <code>https://btttr.cc</code> using validated IMDb IDs (with optional verified TMDB metadata lookup).
+                    </p>
+
+                    <div class="verticalSection">
+                        <h3 class="sectionTitle">Poster Overlay Options</h3>
+
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input id="EnableTrendTags" type="checkbox" is="emby-checkbox" />
+                                <span>Enable Trend Tags</span>
+                            </label>
+                            <div class="fieldDescription checkboxFieldDescription">
+                                Display top badges such as Trending, New, Award Winner, or IMDb rank when available upstream.
+                            </div>
+                        </div>
+
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input id="EnableQualityTags" type="checkbox" is="emby-checkbox" />
+                                <span>Enable Quality Tags</span>
+                            </label>
+                            <div class="fieldDescription checkboxFieldDescription">
+                                Display 4K, Dolby Vision, and Atmos badges when available upstream.
+                            </div>
+                        </div>
+
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input id="EnableGenre" type="checkbox" is="emby-checkbox" />
+                                <span>Enable Genre Label</span>
+                            </label>
+                            <div class="fieldDescription checkboxFieldDescription">
+                                Display the primary genre label at the bottom of the poster.
+                            </div>
+                        </div>
+
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input id="EnableRating" type="checkbox" is="emby-checkbox" />
+                                <span>Enable Ratings</span>
+                            </label>
+                            <div class="fieldDescription checkboxFieldDescription">
+                                Display the score overlay at the bottom of the poster.
+                            </div>
+                        </div>
+
+                        <div class="selectContainer">
+                            <label class="selectLabel" for="RatingSource">Rating Source</label>
+                            <select is="emby-select" id="RatingSource" class="emby-select-withcolor emby-select">
+                                <option value="Average">Average (Default)</option>
+                                <option value="Imdb">IMDb (/10)</option>
+                                <option value="Tmdb">TMDB (/10)</option>
+                                <option value="RottenTomatoes">Rotten Tomatoes (%)</option>
+                                <option value="Metacritic">Metacritic (/100)</option>
+                                <option value="Trakt">Trakt (/10)</option>
+                                <option value="Letterboxd">Letterboxd (/5)</option>
+                                <option value="RogerEbert">Roger Ebert (/4)</option>
+                            </select>
+                            <div class="fieldDescription">
+                                Selects which rating service is requested when Ratings are enabled.
+                            </div>
+                        </div>
+
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input id="EnableAgeRating" type="checkbox" is="emby-checkbox" />
+                                <span>Enable Age Rating Badge</span>
+                            </label>
+                            <div class="fieldDescription checkboxFieldDescription">
+                                Display content certification badges (e.g., PG-13, R, TV-MA).
+                            </div>
+                        </div>
+
+                        <div class="selectContainer">
+                            <label class="selectLabel" for="Language">Language</label>
+                            <select is="emby-select" id="Language" class="emby-select-withcolor emby-select">
+                                <option value="English">English (en)</option>
+                                <option value="SpanishSpain">Spanish - Spain (es-ES)</option>
+                                <option value="SpanishLatinAmerica">Spanish - Latin America (es-MX)</option>
+                                <option value="Spanish">Spanish (es)</option>
+                                <option value="French">French (fr)</option>
+                                <option value="German">German (de)</option>
+                                <option value="PortugueseBrazil">Portuguese - Brazil (pt-BR)</option>
+                                <option value="PortuguesePortugal">Portuguese - Portugal (pt-PT)</option>
+                                <option value="Italian">Italian (it)</option>
+                                <option value="Dutch">Dutch (nl)</option>
+                                <option value="Polish">Polish (pl)</option>
+                                <option value="Russian">Russian (ru)</option>
+                                <option value="Turkish">Turkish (tr)</option>
+                                <option value="Arabic">Arabic (ar)</option>
+                                <option value="Japanese">Japanese (ja)</option>
+                                <option value="Korean">Korean (ko)</option>
+                                <option value="Chinese">Chinese (zh)</option>
+                                <option value="Hindi">Hindi (hi)</option>
+                                <option value="Swedish">Swedish (sv)</option>
+                                <option value="Czech">Czech (cs)</option>
+                            </select>
+                            <div class="fieldDescription">
+                                Preferred language for poster artwork and overlay labels.
+                            </div>
+                        </div>
+
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input id="EnableTmdbFallback" type="checkbox" is="emby-checkbox" />
+                                <span>Enable Verified TMDB-to-IMDb Fallback</span>
+                            </label>
+                            <div class="fieldDescription checkboxFieldDescription">
+                                When an item has no IMDb ID, query <code>btttr.cc/meta/{movie|series}/tmdb:{id}.json</code> to resolve its canonical IMDb ID before building the poster request.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="verticalSection">
+                        <h3 class="sectionTitle">Network &amp; Safety Bounds</h3>
+
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="RequestTimeoutSeconds">Request Timeout (seconds, 3–60)</label>
+                            <input id="RequestTimeoutSeconds" type="number" min="3" max="60" step="1" is="emby-input" />
+                        </div>
+
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="MaxRetryAttempts">Max Retry Attempts (0–5)</label>
+                            <input id="MaxRetryAttempts" type="number" min="0" max="5" step="1" is="emby-input" />
+                        </div>
+                    </div>
+
+                    <div class="verticalSection">
+                        <h3 class="sectionTitle">Opt-In Scheduled Library Refresh</h3>
+                        <p class="fieldDescription">
+                            <strong>Important:</strong> Disabling or uninstalling this plugin does not automatically restore previously replaced posters. Back up your library metadata/artwork before running non-dry-run replacements.
+                        </p>
+
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input id="EnableScheduledRefreshOptIn" type="checkbox" is="emby-checkbox" />
+                                <span>Enable Scheduled Refresh Task (Explicit Opt-In)</span>
+                            </label>
+                            <div class="fieldDescription checkboxFieldDescription">
+                                Must be enabled for the "Update Better Posters" scheduled task to inspect any libraries.
+                            </div>
+                        </div>
+
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input id="ScheduledRefreshDryRun" type="checkbox" is="emby-checkbox" />
+                                <span>Dry-Run Mode (Zero Image Writes)</span>
+                            </label>
+                            <div class="fieldDescription checkboxFieldDescription">
+                                When enabled, the scheduled task validates candidate URLs and images and logs the outcome summary without modifying any item posters.
+                            </div>
+                        </div>
+
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input id="ForceReplaceUnchanged" type="checkbox" is="emby-checkbox" />
+                                <span>Force Replace Unchanged Posters</span>
+                            </label>
+                            <div class="fieldDescription checkboxFieldDescription">
+                                Re-download and overwrite posters even when the item already has a primary poster matching the current Better Posters URL fingerprint.
+                            </div>
+                        </div>
+
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="MaxItemsPerRun">Max Items Per Scheduled Run (1–5000)</label>
+                            <input id="MaxItemsPerRun" type="number" min="1" max="5000" step="1" is="emby-input" />
+                        </div>
+
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="MaxConcurrency">Max Concurrent Downloads (1–8)</label>
+                            <input id="MaxConcurrency" type="number" min="1" max="8" step="1" is="emby-input" />
+                        </div>
+
+                        <div class="folderAccessListContainer">
+                            <h4 class="checkboxListLabel">Scoped Libraries for Scheduled Refresh</h4>
+                            <div id="ScopedLibrariesContainer" class="checkboxList paperList checkboxList-paperList"></div>
+                            <div class="fieldDescription">
+                                Select at least one Movie or Series library to allow scheduled poster updates. Unselected libraries are never touched by the scheduled task.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                            <span>Save</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script type="text/javascript">
+            (function () {
+                var pluginId = '4c7a9d3e-6f12-4b88-9e41-2a5d8c0f7b19';
+
+                function normalizeGuid(val) {
+                    return String(val || '').replace(/-/g, '').toLowerCase();
+                }
+
+                function renderLibraries(page, virtualFolders, selectedIds) {
+                    var container = page.querySelector('#ScopedLibrariesContainer');
+                    container.innerHTML = '';
+                    var selectedSet = {};
+                    (selectedIds || []).forEach(function (id) {
+                        selectedSet[normalizeGuid(id)] = true;
+                    });
+
+                    (virtualFolders || []).forEach(function (folder) {
+                        var itemId = normalizeGuid(folder.ItemId);
+                        if (!itemId) {
+                            return;
+                        }
+                        var collectionType = (folder.CollectionType || '').toLowerCase();
+                        if (collectionType && collectionType !== 'movies' && collectionType !== 'tvshows' && collectionType !== 'mixed') {
+                            return;
+                        }
+
+                        var label = document.createElement('label');
+                        label.className = 'emby-checkbox-label';
+
+                        var input = document.createElement('input');
+                        input.type = 'checkbox';
+                        input.setAttribute('is', 'emby-checkbox');
+                        input.className = 'scoped-library-checkbox';
+                        input.setAttribute('data-library-id', itemId);
+                        input.checked = !!selectedSet[itemId];
+
+                        var span = document.createElement('span');
+                        span.textContent = folder.Name + (folder.CollectionType ? ' (' + folder.CollectionType + ')' : '');
+
+                        label.appendChild(input);
+                        label.appendChild(span);
+                        container.appendChild(label);
+                    });
+                }
+
+                var pageElement = document.querySelector('#BetterPostersConfigPage');
+                pageElement.addEventListener('pageshow', function () {
+                    var page = this;
+                    Dashboard.showLoadingMsg();
+
+                    Promise.all([
+                        ApiClient.getPluginConfiguration(pluginId),
+                        ApiClient.getVirtualFolders ? ApiClient.getVirtualFolders() : ApiClient.getJSON(ApiClient.getUrl('Library/VirtualFolders'))
+                    ]).then(function (results) {
+                        var config = results[0] || {};
+                        var folders = results[1] || [];
+
+                        page.querySelector('#EnableTrendTags').checked = config.EnableTrendTags !== false;
+                        page.querySelector('#EnableQualityTags').checked = !!config.EnableQualityTags;
+                        page.querySelector('#EnableGenre').checked = config.EnableGenre !== false;
+                        page.querySelector('#EnableRating').checked = config.EnableRating !== false;
+                        page.querySelector('#RatingSource').value = config.RatingSource || 'Average';
+                        page.querySelector('#EnableAgeRating').checked = !!config.EnableAgeRating;
+                        page.querySelector('#Language').value = config.Language || 'English';
+                        page.querySelector('#EnableTmdbFallback').checked = config.EnableTmdbFallback !== false;
+
+                        page.querySelector('#RequestTimeoutSeconds').value = config.RequestTimeoutSeconds || 15;
+                        page.querySelector('#MaxRetryAttempts').value = (config.MaxRetryAttempts !== undefined && config.MaxRetryAttempts !== null) ? config.MaxRetryAttempts : 2;
+
+                        page.querySelector('#EnableScheduledRefreshOptIn').checked = !!config.EnableScheduledRefreshOptIn;
+                        page.querySelector('#ScheduledRefreshDryRun').checked = config.ScheduledRefreshDryRun !== false;
+                        page.querySelector('#ForceReplaceUnchanged').checked = !!config.ForceReplaceUnchanged;
+                        page.querySelector('#MaxItemsPerRun').value = config.MaxItemsPerRun || 250;
+                        page.querySelector('#MaxConcurrency').value = config.MaxConcurrency || 2;
+
+                        renderLibraries(page, folders, config.ScopedLibraryIds || []);
+                        Dashboard.hideLoadingMsg();
+                    }).catch(function () {
+                        Dashboard.hideLoadingMsg();
+                    });
+                });
+
+                pageElement.querySelector('#BetterPostersConfigForm').addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    var page = pageElement;
+                    Dashboard.showLoadingMsg();
+
+                    ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                        config.EnableTrendTags = page.querySelector('#EnableTrendTags').checked;
+                        config.EnableQualityTags = page.querySelector('#EnableQualityTags').checked;
+                        config.EnableGenre = page.querySelector('#EnableGenre').checked;
+                        config.EnableRating = page.querySelector('#EnableRating').checked;
+                        config.RatingSource = page.querySelector('#RatingSource').value;
+                        config.EnableAgeRating = page.querySelector('#EnableAgeRating').checked;
+                        config.Language = page.querySelector('#Language').value;
+                        config.EnableTmdbFallback = page.querySelector('#EnableTmdbFallback').checked;
+
+                        config.RequestTimeoutSeconds = parseInt(page.querySelector('#RequestTimeoutSeconds').value, 10) || 15;
+                        config.MaxRetryAttempts = parseInt(page.querySelector('#MaxRetryAttempts').value, 10);
+                        if (isNaN(config.MaxRetryAttempts)) {
+                            config.MaxRetryAttempts = 2;
+                        }
+
+                        config.EnableScheduledRefreshOptIn = page.querySelector('#EnableScheduledRefreshOptIn').checked;
+                        config.ScheduledRefreshDryRun = page.querySelector('#ScheduledRefreshDryRun').checked;
+                        config.ForceReplaceUnchanged = page.querySelector('#ForceReplaceUnchanged').checked;
+                        config.MaxItemsPerRun = parseInt(page.querySelector('#MaxItemsPerRun').value, 10) || 250;
+                        config.MaxConcurrency = parseInt(page.querySelector('#MaxConcurrency').value, 10) || 2;
+
+                        var scoped = [];
+                        var checkboxes = page.querySelectorAll('.scoped-library-checkbox');
+                        for (var i = 0; i < checkboxes.length; i++) {
+                            if (checkboxes[i].checked) {
+                                scoped.push(checkboxes[i].getAttribute('data-library-id'));
+                            }
+                        }
+                        config.ScopedLibraryIds = scoped;
+
+                        ApiClient.updatePluginConfiguration(pluginId, config).then(function (result) {
+                            Dashboard.processPluginConfigurationUpdateResult(result);
+                        }).catch(function () {
+                            Dashboard.hideLoadingMsg();
+                        });
+                    });
+
+                    return false;
+                });
+            })();
+        </script>
+    </div>
+</body>
+</html>
