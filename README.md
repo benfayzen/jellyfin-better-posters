@@ -34,21 +34,7 @@ Available in Jellyfin under **Dashboard -> Plugins -> Better Posters**:
 | `Language` | `English` | 20 verified `btttr.cc` languages (`en`, `de`, `fr`, `es-ES`, `es-MX`, `es`, `pt-BR`, `pt-PT`, `it`, `nl`, `pl`, `ru`, `tr`, `ar`, `ja`, `ko`, `zh`, `hi`, `sv`, `cs`) |
 | `EnableTmdbFallback` | `true` | Resolve IMDb ID from TMDB ID via `btttr.cc/meta/{movie|series}/tmdb:{id}.json` when IMDb ID is absent |
 | `RequestTimeoutSeconds` | `15` | Bounded per-request timeout (`3`–`60` seconds) |
-| `MaxRetryAttempts` | `2` | Bounded retry count (`0`–`4`) for transient `429`/`502`/`503`/`504` responses |
-
-### 3. Opt-In Scheduled Refresh Milestone (`IScheduledTask`)
-
-Registered as **Update Better Posters** (`Key: JellyfinPluginBetterPostersRefresh`) under **Dashboard -> Scheduled Tasks -> Library**:
-
-- **Zero default triggers:** Never runs automatically on installation.
-- **Explicit opt-in required:** Exits immediately with zero writes unless `EnableScheduledRefreshOptIn` is enabled in plugin settings.
-- **Dry-run by default:** `ScheduledRefreshDryRun` defaults to `true`, logging and counting candidate evaluations without modifying any images.
-- **Explicit library scope & bounds:** Requires at least one library selected in `ScopedLibraryIds`, and enforces `MaxItemsPerRun` (`1`–`5000`, default `250`) and `MaxConcurrency` (`1`–`8`, default `2`).
-- **Non-destructive replacement:** Downloads and validates the complete poster stream into memory before calling `IProviderManager.SaveImage(item, stream, mimeType, ImageType.Primary, ...)`. Any network error, missing poster, invalid image payload, or cancellation preserves the item's existing poster untouched.
-- **Fingerprint deduplication:** Persists per-item URL fingerprints in `Jellyfin.Plugin.BetterPosters.RefreshState.json` so repeated runs skip items whose poster configuration and resolved ID have not changed (unless `ForceReplaceUnchanged` is enabled).
-
-> **Important Restoration & Overwrite Notice:**
-> When live scheduled replacement is enabled and saves a new primary poster, Jellyfin replaces the item's active primary image. **Disabling or uninstalling this plugin does not automatically restore previously overwritten posters.** Before enabling live scheduled refresh on a library, test with **Dry-Run Mode** enabled, back up your library metadata/artwork, or use Jellyfin's native **Edit Images** UI / library metadata refresh with another image provider to restore artwork manually.
+| `MaxRetryAttempts` | `2` | Bounded retry count (`0`–`5`) for transient `429`/`502`/`503`/`504` responses |
 
 ## Private Manual Installation (Jellyfin 12.4+)
 
@@ -69,7 +55,7 @@ This repository is private. Do **not** configure a GitHub raw URL with embedded 
 dotnet restore Jellyfin.Plugin.BetterPosters.sln
 dotnet build Jellyfin.Plugin.BetterPosters.sln --configuration Release --no-restore
 
-# 2. Run offline unit and mocked HTTP contract tests (149 tests)
+# 2. Run offline unit and mocked HTTP contract tests (133 tests)
 dotnet test Jellyfin.Plugin.BetterPosters.sln --configuration Release --no-build
 
 # 3. Run opt-in live upstream contract check against https://btttr.cc

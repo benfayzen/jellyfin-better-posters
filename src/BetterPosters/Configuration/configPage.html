@@ -143,61 +143,6 @@
                         </div>
                     </div>
 
-                    <div class="verticalSection">
-                        <h3 class="sectionTitle">Opt-In Scheduled Library Refresh</h3>
-                        <p class="fieldDescription">
-                            <strong>Important:</strong> Disabling or uninstalling this plugin does not automatically restore previously replaced posters. Back up your library metadata/artwork before running non-dry-run replacements.
-                        </p>
-
-                        <div class="checkboxContainer checkboxContainer-withDescription">
-                            <label class="emby-checkbox-label">
-                                <input id="EnableScheduledRefreshOptIn" type="checkbox" is="emby-checkbox" />
-                                <span>Enable Scheduled Refresh Task (Explicit Opt-In)</span>
-                            </label>
-                            <div class="fieldDescription checkboxFieldDescription">
-                                Must be enabled for the "Update Better Posters" scheduled task to inspect any libraries.
-                            </div>
-                        </div>
-
-                        <div class="checkboxContainer checkboxContainer-withDescription">
-                            <label class="emby-checkbox-label">
-                                <input id="ScheduledRefreshDryRun" type="checkbox" is="emby-checkbox" />
-                                <span>Dry-Run Mode (Zero Image Writes)</span>
-                            </label>
-                            <div class="fieldDescription checkboxFieldDescription">
-                                When enabled, the scheduled task validates candidate URLs and images and logs the outcome summary without modifying any item posters.
-                            </div>
-                        </div>
-
-                        <div class="checkboxContainer checkboxContainer-withDescription">
-                            <label class="emby-checkbox-label">
-                                <input id="ForceReplaceUnchanged" type="checkbox" is="emby-checkbox" />
-                                <span>Force Replace Unchanged Posters</span>
-                            </label>
-                            <div class="fieldDescription checkboxFieldDescription">
-                                Re-download and overwrite posters even when the item already has a primary poster matching the current Better Posters URL fingerprint.
-                            </div>
-                        </div>
-
-                        <div class="inputContainer">
-                            <label class="inputLabel inputLabelUnfocused" for="MaxItemsPerRun">Max Items Per Scheduled Run (1–5000)</label>
-                            <input id="MaxItemsPerRun" type="number" min="1" max="5000" step="1" is="emby-input" />
-                        </div>
-
-                        <div class="inputContainer">
-                            <label class="inputLabel inputLabelUnfocused" for="MaxConcurrency">Max Concurrent Downloads (1–8)</label>
-                            <input id="MaxConcurrency" type="number" min="1" max="8" step="1" is="emby-input" />
-                        </div>
-
-                        <div class="folderAccessListContainer">
-                            <h4 class="checkboxListLabel">Scoped Libraries for Scheduled Refresh</h4>
-                            <div id="ScopedLibrariesContainer" class="checkboxList paperList checkboxList-paperList"></div>
-                            <div class="fieldDescription">
-                                Select at least one Movie or Series library to allow scheduled poster updates. Unselected libraries are never touched by the scheduled task.
-                            </div>
-                        </div>
-                    </div>
-
                     <div>
                         <button is="emby-button" type="submit" class="raised button-submit block emby-button">
                             <span>Save</span>
@@ -211,58 +156,13 @@
             (function () {
                 var pluginId = '4c7a9d3e-6f12-4b88-9e41-2a5d8c0f7b19';
 
-                function normalizeGuid(val) {
-                    return String(val || '').replace(/-/g, '').toLowerCase();
-                }
-
-                function renderLibraries(page, virtualFolders, selectedIds) {
-                    var container = page.querySelector('#ScopedLibrariesContainer');
-                    container.innerHTML = '';
-                    var selectedSet = {};
-                    (selectedIds || []).forEach(function (id) {
-                        selectedSet[normalizeGuid(id)] = true;
-                    });
-
-                    (virtualFolders || []).forEach(function (folder) {
-                        var itemId = normalizeGuid(folder.ItemId);
-                        if (!itemId) {
-                            return;
-                        }
-                        var collectionType = (folder.CollectionType || '').toLowerCase();
-                        if (collectionType && collectionType !== 'movies' && collectionType !== 'tvshows' && collectionType !== 'mixed') {
-                            return;
-                        }
-
-                        var label = document.createElement('label');
-                        label.className = 'emby-checkbox-label';
-
-                        var input = document.createElement('input');
-                        input.type = 'checkbox';
-                        input.setAttribute('is', 'emby-checkbox');
-                        input.className = 'scoped-library-checkbox';
-                        input.setAttribute('data-library-id', itemId);
-                        input.checked = !!selectedSet[itemId];
-
-                        var span = document.createElement('span');
-                        span.textContent = folder.Name + (folder.CollectionType ? ' (' + folder.CollectionType + ')' : '');
-
-                        label.appendChild(input);
-                        label.appendChild(span);
-                        container.appendChild(label);
-                    });
-                }
-
                 var pageElement = document.querySelector('#BetterPostersConfigPage');
                 pageElement.addEventListener('pageshow', function () {
                     var page = this;
                     Dashboard.showLoadingMsg();
 
-                    Promise.all([
-                        ApiClient.getPluginConfiguration(pluginId),
-                        ApiClient.getVirtualFolders ? ApiClient.getVirtualFolders() : ApiClient.getJSON(ApiClient.getUrl('Library/VirtualFolders'))
-                    ]).then(function (results) {
-                        var config = results[0] || {};
-                        var folders = results[1] || [];
+                    ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                        config = config || {};
 
                         page.querySelector('#EnableTrendTags').checked = config.EnableTrendTags !== false;
                         page.querySelector('#EnableQualityTags').checked = !!config.EnableQualityTags;
@@ -276,13 +176,6 @@
                         page.querySelector('#RequestTimeoutSeconds').value = config.RequestTimeoutSeconds || 15;
                         page.querySelector('#MaxRetryAttempts').value = (config.MaxRetryAttempts !== undefined && config.MaxRetryAttempts !== null) ? config.MaxRetryAttempts : 2;
 
-                        page.querySelector('#EnableScheduledRefreshOptIn').checked = !!config.EnableScheduledRefreshOptIn;
-                        page.querySelector('#ScheduledRefreshDryRun').checked = config.ScheduledRefreshDryRun !== false;
-                        page.querySelector('#ForceReplaceUnchanged').checked = !!config.ForceReplaceUnchanged;
-                        page.querySelector('#MaxItemsPerRun').value = config.MaxItemsPerRun || 250;
-                        page.querySelector('#MaxConcurrency').value = config.MaxConcurrency || 2;
-
-                        renderLibraries(page, folders, config.ScopedLibraryIds || []);
                         Dashboard.hideLoadingMsg();
                     }).catch(function () {
                         Dashboard.hideLoadingMsg();
@@ -309,21 +202,6 @@
                         if (isNaN(config.MaxRetryAttempts)) {
                             config.MaxRetryAttempts = 2;
                         }
-
-                        config.EnableScheduledRefreshOptIn = page.querySelector('#EnableScheduledRefreshOptIn').checked;
-                        config.ScheduledRefreshDryRun = page.querySelector('#ScheduledRefreshDryRun').checked;
-                        config.ForceReplaceUnchanged = page.querySelector('#ForceReplaceUnchanged').checked;
-                        config.MaxItemsPerRun = parseInt(page.querySelector('#MaxItemsPerRun').value, 10) || 250;
-                        config.MaxConcurrency = parseInt(page.querySelector('#MaxConcurrency').value, 10) || 2;
-
-                        var scoped = [];
-                        var checkboxes = page.querySelectorAll('.scoped-library-checkbox');
-                        for (var i = 0; i < checkboxes.length; i++) {
-                            if (checkboxes[i].checked) {
-                                scoped.push(checkboxes[i].getAttribute('data-library-id'));
-                            }
-                        }
-                        config.ScopedLibraryIds = scoped;
 
                         ApiClient.updatePluginConfiguration(pluginId, config).then(function (result) {
                             Dashboard.processPluginConfigurationUpdateResult(result);

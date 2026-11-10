@@ -9,15 +9,10 @@
 - Add `BtttrClient` and `ImagePayloadValidator` enforcing HTTPS-only `btttr.cc` requests, manual redirect validation (`x-bp-fallback: noart` handled as `not_found` without following third-party redirects), bounded timeouts and retry/backoff (`429 Retry-After` and `502`/`503`/`504`), streamed byte caps (`15 MiB` images / `256 KiB` metadata), and `JPEG`/`PNG`/`WebP` magic-byte checks.
 - Add verified TMDB-to-IMDb fallback resolution via `https://btttr.cc/meta/{movie|series}/tmdb:{id}.json` with thread-safe in-memory caching.
 - Add `BetterPostersImageProvider` (`IRemoteImageProvider`, `IHasOrder`) for `Movie` and `Series` (`ImageType.Primary` only).
-- Add `PluginConfiguration`, `PluginConfigurationValidator`, and embedded Jellyfin admin configuration page (`configPage.html`).
-
-### Milestone 2: Opt-In Scheduled Refresh (`IScheduledTask`)
-
-- Add `BetterPostersRefreshTask` (`Key: JellyfinPluginBetterPostersRefresh`) with zero default triggers.
-- Add `PosterRefreshService`, `JellyfinPosterRefreshGateway`, and `JsonPosterRefreshStateStore` enforcing explicit opt-in (`EnableScheduledRefreshOptIn`), dry-run default (`ScheduledRefreshDryRun`), explicit library scoping (`ScopedLibraryIds`), bounded `MaxItemsPerRun` and `MaxConcurrency`, download-and-validate-before-save replacement via `IProviderManager.SaveImage`, and atomic per-item URL fingerprint persistence (`Jellyfin.Plugin.BetterPosters.RefreshState.json`).
+- Add `PluginConfiguration` (`ValidateOrThrow`) and embedded Jellyfin admin configuration page (`configPage.html`).
 
 ### Packaging, CI, and Verification
 
 - Add `scripts/package-plugin.sh` producing `artifacts/better-posters_1.0.0.0.zip` (`Jellyfin.Plugin.BetterPosters.dll` and `meta.json` only).
-- Add 149 offline unit and mocked HTTP contract tests, 1 opt-in live `btttr.cc` contract test (`BETTER_POSTERS_RUN_LIVE_TESTS=1`), and an automated disposable loopback Jellyfin 12.4 server smoke test (`tests/integration/run-jellyfin12-smoke.sh`).
+- Add 133 offline unit and mocked HTTP contract tests, 1 opt-in live `btttr.cc` contract test (`BETTER_POSTERS_RUN_LIVE_TESTS=1`), and an automated disposable loopback Jellyfin 12.4 server smoke test (`tests/integration/run-jellyfin12-smoke.sh`).
 - Add GitHub Actions CI workflow (`.github/workflows/ci.yml`).

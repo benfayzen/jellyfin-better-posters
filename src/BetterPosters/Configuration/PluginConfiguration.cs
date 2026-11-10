@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Jellyfin.Plugin.BetterPosters.Domain;
 using MediaBrowser.Model.Plugins;
 
@@ -24,16 +23,6 @@ public sealed class PluginConfiguration : BasePluginConfiguration
     /// Maximum allowed retry attempts for transient upstream errors.
     /// </summary>
     public const int MaxAllowedRetries = 5;
-
-    /// <summary>
-    /// Maximum allowed items processed in a single scheduled refresh execution.
-    /// </summary>
-    public const int MaxAllowedItemsPerRun = 5000;
-
-    /// <summary>
-    /// Maximum allowed concurrent item operations during a scheduled refresh.
-    /// </summary>
-    public const int MaxAllowedConcurrency = 8;
 
     /// <summary>
     /// Gets or sets a value indicating whether trend tags (e.g., Trending, New, IMDb top rank) are enabled.
@@ -87,40 +76,6 @@ public sealed class PluginConfiguration : BasePluginConfiguration
     public int MaxRetryAttempts { get; set; } = 2;
 
     /// <summary>
-    /// Gets or sets a value indicating whether the scheduled poster refresh task is explicitly enabled by the administrator.
-    /// Disabled by default for safety.
-    /// </summary>
-    public bool EnableScheduledRefreshOptIn { get; set; } = false;
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the scheduled poster refresh task runs in dry-run mode (zero image writes).
-    /// Enabled by default for safety.
-    /// </summary>
-    public bool ScheduledRefreshDryRun { get; set; } = true;
-
-    /// <summary>
-    /// Gets or sets the list of Jellyfin library folder GUIDs explicitly scoped for scheduled poster refresh.
-    /// Empty by default; at least one valid library GUID is required for scheduled refresh execution.
-    /// </summary>
-    public string[] ScopedLibraryIds { get; set; } = [];
-
-    /// <summary>
-    /// Gets or sets the upper bound of items processed per scheduled refresh execution (1..5000).
-    /// </summary>
-    public int MaxItemsPerRun { get; set; } = 250;
-
-    /// <summary>
-    /// Gets or sets the bounded concurrency for scheduled refresh operations (1..8).
-    /// </summary>
-    public int MaxConcurrency { get; set; } = 2;
-
-    /// <summary>
-    /// Gets or sets a value indicating whether scheduled refresh should re-download and overwrite posters
-    /// even when the item's recorded Better Posters URL fingerprint has not changed.
-    /// </summary>
-    public bool ForceReplaceUnchanged { get; set; } = false;
-
-    /// <summary>
     /// Validates all configuration properties and throws if any value is outside supported bounds.
     /// </summary>
     public void ValidateOrThrow()
@@ -150,45 +105,6 @@ public sealed class PluginConfiguration : BasePluginConfiguration
                 MaxRetryAttempts,
                 $"MaxRetryAttempts must be between 0 and {MaxAllowedRetries}.");
         }
-
-        if (MaxItemsPerRun is < 1 or > MaxAllowedItemsPerRun)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(MaxItemsPerRun),
-                MaxItemsPerRun,
-                $"MaxItemsPerRun must be between 1 and {MaxAllowedItemsPerRun}.");
-        }
-
-        if (MaxConcurrency is < 1 or > MaxAllowedConcurrency)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(MaxConcurrency),
-                MaxConcurrency,
-                $"MaxConcurrency must be between 1 and {MaxAllowedConcurrency}.");
-        }
-
-        if (ScopedLibraryIds is null)
-        {
-            throw new ArgumentException("ScopedLibraryIds cannot be null.", nameof(ScopedLibraryIds));
-        }
-
-        var normalizedIds = new List<string>(ScopedLibraryIds.Length);
-        foreach (var rawId in ScopedLibraryIds)
-        {
-            if (string.IsNullOrWhiteSpace(rawId))
-            {
-                continue;
-            }
-
-            if (!Guid.TryParse(rawId.Trim(), out var parsedGuid) || parsedGuid == Guid.Empty)
-            {
-                throw new ArgumentException($"Invalid library GUID in ScopedLibraryIds: '{rawId}'.", nameof(ScopedLibraryIds));
-            }
-
-            normalizedIds.Add(parsedGuid.ToString("N"));
-        }
-
-        ScopedLibraryIds = normalizedIds.ToArray();
     }
 
     /// <summary>

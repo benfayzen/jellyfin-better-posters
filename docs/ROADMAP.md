@@ -10,12 +10,8 @@ Created `Jellyfin.Plugin.BetterPosters.sln`, `global.json`, `Directory.Build.pro
 
 ## 2 — MVP provider (Completed)
 
-Implemented `Plugin`, `PluginConfiguration`, `PluginConfigurationValidator`, embedded `configPage.html`, `BtttrClient`, `ImagePayloadValidator`, and `BetterPostersImageProvider` supporting `Movie` and `Series` (`ImageType.Primary` only) with verified TMDB fallback and comprehensive unit/HTTP contract tests.
+Implemented `Plugin`, `PluginConfiguration`, embedded `configPage.html`, `BtttrClient`, `ImagePayloadValidator`, and `BetterPostersImageProvider` supporting `Movie` and `Series` (`ImageType.Primary` only) with verified TMDB fallback and comprehensive unit/HTTP contract tests.
 
-## 3 — Safe scheduled refresh (Completed)
+## 3 — Delivery & Verification (Completed)
 
-Implemented `BetterPostersRefreshTask` (`IScheduledTask` with zero default triggers), `PosterRefreshService`, `JellyfinPosterRefreshGateway`, and `JsonPosterRefreshStateStore` with explicit opt-in, dry-run default, library scoping, bounded item count/concurrency, download-and-validate-before-save semantics, and per-item URL fingerprint deduplication.
-
-## 4 — Delivery (Completed)
-
-Implemented reproducible packaging (`scripts/package-plugin.sh` producing `artifacts/better-posters_1.0.0.0.zip`), archive/dependency validation, opt-in live upstream contract test (`LiveBtttrContractTests`), and end-to-end disposable Jellyfin 12.4 loopback smoke test (`tests/integration/run-jellyfin12-smoke.sh`).
+Implemented reproducible packaging (`scripts/package-plugin.sh` producing `artifacts/better-posters_1.0.0.0.zip`), archive/dependency validation, opt-in live upstream contract test (`LiveBtttrContractTests`), and end-to-end disposable Jellyfin 12.4 loopback smoke test (`tests/integration/run-jellyfin12-smoke.sh`). Per owner decision, custom scheduled bulk-refresh tasks were removed to keep the plugin focused on Jellyfin's native `IRemoteImageProvider` integration.

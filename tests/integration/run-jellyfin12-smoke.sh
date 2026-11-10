@@ -220,8 +220,9 @@ assert cfg["EnableAgeRating"] is False
 assert cfg["RatingSource"] == "Average"
 assert cfg["Language"] == "English"
 assert cfg["EnableTmdbFallback"] is True
-assert cfg["EnableScheduledRefreshOptIn"] is False
-assert cfg["ScheduledRefreshDryRun"] is True
+assert cfg["RequestTimeoutSeconds"] == 15
+assert cfg["MaxRetryAttempts"] == 2
+assert "EnableScheduledRefreshOptIn" not in cfg
 
 # Update configuration
 cfg["EnableTrendTags"] = False
@@ -239,12 +240,11 @@ assert cfg_after["RatingSource"] == "Imdb"
 assert cfg_after["Language"] == "German"
 print("  [OK] Updated configuration persisted and round-tripped:", json.dumps(cfg_after))
 
-# 6. Verify Scheduled Task registration and zero default triggers
+# 6. Verify no Better Posters scheduled task is registered
 tasks = api_req("GET", "/ScheduledTasks", token=token)
 bp_task = next((t for t in tasks if t.get("Key") == "JellyfinPluginBetterPostersRefresh"), None)
-assert bp_task is not None, f"Scheduled task JellyfinPluginBetterPostersRefresh not found in {[t.get('Key') for t in tasks]}"
-assert bp_task.get("Triggers") == [], f"Expected zero default triggers, got {bp_task.get('Triggers')}"
-print(f"  [OK] Scheduled task registered with 0 default triggers: Name='{bp_task['Name']}' Key='{bp_task['Key']}'")
+assert bp_task is None, f"Unexpected Better Posters scheduled task found: {bp_task}"
+print("  [OK] Verified no Better Posters scheduled task is registered.")
 
 # 7. Create a disposable Movies library with synthetic NFO/STRM fixtures and test IRemoteImageProvider
 add_lib_path = "/Library/VirtualFolders?name=SmokeMovies&collectionType=movies&refreshLibrary=true&paths=" + urllib.parse.quote(media_dir)
@@ -294,49 +294,12 @@ expected_int_url = "https://btttr.cc/poster-qa/imdb/poster-default/tt0816692.jpg
 assert bp_images_int[0]["Url"] == expected_int_url, f"Unexpected URL {bp_images_int[0]['Url']} != {expected_int_url}"
 print(f"  [OK] RemoteImageProvider (TMDB fallback -> tt0816692) returned expected candidate: {bp_images_int[0]['Url']}")
 
-# 8. Test Scheduled Refresh in Dry-Run mode (verify zero image writes)
-for movie_item in (inception, interstellar):
-    if movie_item.get("ImageTags", {}).get("Primary"):
-        api_req("DELETE", f"/Items/{movie_item['Id']}/Images/Primary", token=token, expect_json=False)
-
-vfolders = api_req("GET", "/Library/VirtualFolders", token=token)
-lib_id = vfolders[0]["ItemId"].replace("-", "")
-cfg_after["EnableScheduledRefreshOptIn"] = True
-cfg_after["ScheduledRefreshDryRun"] = True
-cfg_after["ScopedLibraryIds"] = [lib_id]
-api_req("POST", f"/Plugins/{plugin_guid}/Configuration", body=cfg_after, token=token, expect_json=False)
-
-api_req("POST", f"/ScheduledTasks/Running/{bp_task['Id']}", token=token, expect_json=False)
-for _ in range(30):
-    t_state = api_req("GET", f"/ScheduledTasks/{bp_task['Id']}", token=token)
-    if t_state.get("State") == "Idle" and t_state.get("LastExecutionResult"):
-        break
-    time.sleep(1)
-
-inc_after_dry = api_req("GET", f"/Items/{inception['Id']}", token=token)
-assert not inc_after_dry.get("ImageTags", {}).get("Primary"), f"Dry-run should not have written a primary image, got {inc_after_dry.get('ImageTags')}"
-print("  [OK] Scheduled refresh dry-run completed with zero writes.")
-
-# 9. Test Scheduled Refresh in Opt-In Live mode on disposable library (verify primary image downloaded, validated, and saved)
-cfg_after["ScheduledRefreshDryRun"] = False
-api_req("POST", f"/Plugins/{plugin_guid}/Configuration", body=cfg_after, token=token, expect_json=False)
-
-api_req("POST", f"/ScheduledTasks/Running/{bp_task['Id']}", token=token, expect_json=False)
-for _ in range(30):
-    t_state = api_req("GET", f"/ScheduledTasks/{bp_task['Id']}", token=token)
-    if t_state.get("State") == "Idle":
-        inc_check = api_req("GET", f"/Items/{inception['Id']}", token=token)
-        if inc_check.get("ImageTags", {}).get("Primary"):
-            break
-    time.sleep(1)
-
-inc_after_live = api_req("GET", f"/Items/{inception['Id']}", token=token)
-assert inc_after_live.get("ImageTags", {}).get("Primary"), f"Expected primary image tag after live scheduled refresh, got {inc_after_live.get('ImageTags')}"
-state_path = os.path.join(data_dir, "plugins", "configurations", "Jellyfin.Plugin.BetterPosters.RefreshState.json")
-assert os.path.exists(state_path), f"Expected refresh state file at {state_path}"
-state_data = json.load(open(state_path))
-assert len(state_data) >= 2, f"Expected >=2 tracked item fingerprints in {state_path}, got {state_data}"
-print(f"  [OK] Scheduled refresh live run saved validated primary image (Primary tag={inc_after_live['ImageTags']['Primary']}) and persisted {len(state_data)} item fingerprints.")
+# 8. Download and apply primary poster via Jellyfin's native RemoteImages/Download endpoint
+dl_path = f"/Items/{inception['Id']}/RemoteImages/Download?Type=Primary&ImageUrl=" + urllib.parse.quote(expected_inc_url, safe="")
+api_req("POST", dl_path, token=token, expect_json=False)
+inc_after_dl = api_req("GET", f"/Items/{inception['Id']}", token=token)
+assert inc_after_dl.get("ImageTags", {}).get("Primary"), f"Expected Primary image tag after RemoteImages/Download, got {inc_after_dl.get('ImageTags')}"
+print(f"  [OK] RemoteImageProvider.GetImageResponse downloaded and saved validated primary poster (Primary tag={inc_after_dl['ImageTags']['Primary']}).")
 PY
 
 echo "==> Disposable Jellyfin 12.4 smoke test PASSED!"

@@ -3,8 +3,12 @@ using System.IO;
 using System.Linq;
 using Jellyfin.Plugin.BetterPosters.Configuration;
 using Jellyfin.Plugin.BetterPosters.Domain;
+using Jellyfin.Plugin.BetterPosters.Http;
 using MediaBrowser.Common.Configuration;
+using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Serialization;
+using MediaBrowser.Model.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Jellyfin.Plugin.BetterPosters.Tests;
@@ -48,11 +52,24 @@ public sealed class PluginTests
         var invalidConfig = new PluginConfiguration
         {
             Language = PosterLanguage.German,
-            MaxConcurrency = 999
+            RequestTimeoutSeconds = 999
         };
 
         Assert.Throws<ArgumentOutOfRangeException>(() => plugin.UpdateConfiguration(invalidConfig));
         Assert.Equal(PosterLanguage.Japanese, plugin.Configuration.Language);
+    }
+
+    [Fact]
+    public void PluginServiceRegistrator_RegistersProviderAndHttpClientWithoutScheduledTask()
+    {
+        var services = new ServiceCollection();
+        var registrator = new PluginServiceRegistrator();
+
+        registrator.RegisterServices(services, null!);
+
+        Assert.Contains(services, d => d.ServiceType == typeof(IBtttrClient));
+        Assert.Contains(services, d => d.ServiceType == typeof(IRemoteImageProvider));
+        Assert.DoesNotContain(services, d => d.ServiceType == typeof(IScheduledTask));
     }
 
     private sealed class TempDirectory : IDisposable
