@@ -36,16 +36,28 @@ Available in Jellyfin under **Dashboard -> Plugins -> Better Posters**:
 | `RequestTimeoutSeconds` | `15` | Bounded per-request timeout (`3`–`60` seconds) |
 | `MaxRetryAttempts` | `2` | Bounded retry count (`0`–`5`) for transient `429`/`502`/`503`/`504` responses |
 
-## Private Manual Installation (Jellyfin 12.4+)
+## Installation (Jellyfin 12.4+)
 
-This repository is private. Do **not** configure a GitHub raw URL with embedded access tokens in Jellyfin's plugin repositories. Instead, install from the build artifact:
+### Option 1: Jellyfin Plugin Repository (Recommended)
 
-1. Build the plugin archive locally or download `better-posters_1.0.0.0.zip` from a private CI build:
+1. Open your Jellyfin 12.4+ web UI and go to **Dashboard -> Plugins -> Repositories** (or **Catalog -> Repositories**).
+2. Click **+** (**Add**) and enter:
+   - **Repository Name:** `Better Posters`
+   - **Repository URL:** `https://raw.githubusercontent.com/benfayzen/jellyfin-better-posters/main/manifest.json`
+3. Click **Save**.
+4. Open **Dashboard -> Plugins -> Catalog** (or **All**), locate **Better Posters** under **Metadata**, and click **Install**.
+5. Restart Jellyfin when prompted.
+6. Enable **Better Posters** in your **Movies** and/or **Shows** library settings under **Image Fetchers (Primary)**.
+7. Optionally configure poster overlays, rating source, and language under **Dashboard -> Plugins -> Better Posters**.
+
+### Option 2: Manual Installation
+
+1. Download `better-posters_1.0.0.0.zip` from [GitHub Releases](https://github.com/benfayzen/jellyfin-better-posters/releases) or build it locally:
    ```bash
    bash scripts/package-plugin.sh
    ```
-2. Verify the archive contents (`Jellyfin.Plugin.BetterPosters.dll` and `meta.json` only) and SHA256 checksum printed by the packaging script.
-3. Extract `artifacts/better-posters_1.0.0.0.zip` into your Jellyfin 12.4 server's plugins directory under `<JELLYFIN_DATA_DIR>/plugins/BetterPosters_1.0.0.0/`.
+2. Verify the archive contents (`Jellyfin.Plugin.BetterPosters.dll` and `meta.json` only) and checksum.
+3. Extract `better-posters_1.0.0.0.zip` into your Jellyfin 12.4 server's plugins directory under `<JELLYFIN_DATA_DIR>/plugins/BetterPosters_1.0.0.0/`.
 4. Restart Jellyfin and enable **Better Posters** in your Movie and/or Series library settings under **Image Fetchers (Primary)**.
 
 ## Development and Verification Commands
@@ -79,5 +91,7 @@ bash tests/integration/run-jellyfin12-smoke.sh
 7. [Evidence and Reference Projects](docs/REFERENCES.md).
 
 ## Licensing
+
+Licensed under the **GNU General Public License v3.0** ([LICENSE](LICENSE)).
 
 All code, configuration UI, tests, and synthetic test fixtures in this repository are original implementations written for Jellyfin 12.x. Zero source files, HTML, binaries, or artwork were copied from `neurekadev/better-posters` (`GPL-3.0`) or `TheAceOfficials/BetterPoster-for-Jellyfin` (unlicensed). See [docs/REFERENCES.md](docs/REFERENCES.md) and [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) for provenance details.

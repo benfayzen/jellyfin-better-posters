@@ -10,7 +10,7 @@ Read README.md, GUIDELINES.md, docs/PROJECT.md, docs/ARCHITECTURE.md, docs/ROADM
 - Verify official 12.x APIs and NuGet package availability. Do not invent package versions or silently substitute 10.x/11.x packages. Record the exact SDK, package, server tag and commit used in docs/COMPATIBILITY.md during implementation.
 - No legacy branches, multi-targeting, reflection compatibility shims, old configuration import, or dependencies on either reference plugin.
 - Use a new plugin GUID and distinct assembly identity; never reuse a reference plugin identity.
-- Keep this repository private. Never change visibility or publish externally without owner authorization.
+- Public repository under GPL-3.0 (`LICENSE`) per owner authorization. Do not publish new catalog versions without a matching verified release artifact.
 - English for code, UI, documentation, commits, issues, and PRs.
 
 ## Execution discipline

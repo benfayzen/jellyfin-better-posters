@@ -36,4 +36,4 @@ https://btttr.cc/ — verify current endpoint contract, usage conditions, rate l
 
 ## Licensing gate
 
-No upstream source/assets were imported. Original-code licensing is pending owner decision. Independent implementation may proceed; importing GPL source requires compatible licensing and preserved notices. Unlicensed reference material must not be copied. Record third-party package/fixture licenses before shipping.
+No upstream source/assets were imported. Per owner decision, original code in this repository is licensed under **GPL-3.0** ([LICENSE](../LICENSE)), compatible with Jellyfin's `GPL-3.0-only` host packages. Unlicensed reference material was not copied.
