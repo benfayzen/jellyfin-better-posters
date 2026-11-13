@@ -12,7 +12,7 @@
         "changelog": "Initial verified release for Jellyfin 12.4 (net10.0).",
         "targetAbi": "12.4.0.0",
         "sourceUrl": "https://github.com/benfayzen/jellyfin-better-posters/releases/download/v1.0.0.0/better-posters_1.0.0.0.zip",
-        "checksum": "d169e779cb0ee7b119677e30e2d92fa0",
+        "checksum": "39397b7b046ce2a77b831b863e4dca8c",
         "timestamp": "2026-11-10T00:00:00Z"
       }
     ]
