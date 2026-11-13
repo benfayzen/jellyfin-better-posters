@@ -130,9 +130,9 @@ https://btttr.cc/{routePrefix}/imdb/poster-default/{imdbId}.jpg[?{query}]
 - **Packaging Script:** `bash scripts/package-plugin.sh`
 - **Output Archive:** `artifacts/better-posters_1.0.0.0.zip`
 - **Archive Contents:** Exclusively `Jellyfin.Plugin.BetterPosters.dll` (with embedded `configPage.html`) and `meta.json` (`targetAbi: "12.4.0.0"`, `guid: "4c7a9d3e-6f12-4b88-9e41-2a5d8c0f7b19"`). Zero host `Jellyfin.*`, `MediaBrowser.*`, or `Microsoft.Extensions.*` assemblies are bundled.
-- **Verified Checksums (`1.0.0.0` build):**
-  - `SHA256`: `068ecc04bce75eb21492ea3e0be5b9cebf5edf3ddc17db13e8607163035ac07f`
-  - `MD5`: `d169e779cb0ee7b119677e30e2d92fa0`
+- **Verified Checksums (`1.0.0.0` GitHub Release build):**
+  - `SHA256`: `818e83d5ff2150ab56c2be01230882d2e3e92b8a0d9737c0659f79bea2465c42`
+  - `MD5`: `39397b7b046ce2a77b831b863e4dca8c`
 
 ## 8. Executed Verification Evidence
 
