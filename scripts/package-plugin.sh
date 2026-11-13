@@ -44,7 +44,7 @@ cat > "${STAGE_DIR}/meta.json" <<EOF
   "description": "Customizable primary posters for Movies and Series from btttr.cc (Jellyfin 12).",
   "guid": "${PLUGIN_GUID}",
   "name": "Better Posters",
-  "overview": "Native Jellyfin 12 remote primary-image provider and opt-in scheduled refresh backed by btttr.cc.",
+  "overview": "Native Jellyfin 12 remote primary-image provider backed by btttr.cc.",
   "owner": "benfayzen",
   "targetAbi": "${TARGET_ABI}",
   "timestamp": "2026-11-10T00:00:00Z",

@@ -131,8 +131,8 @@ https://btttr.cc/{routePrefix}/imdb/poster-default/{imdbId}.jpg[?{query}]
 - **Output Archive:** `artifacts/better-posters_1.0.0.0.zip`
 - **Archive Contents:** Exclusively `Jellyfin.Plugin.BetterPosters.dll` (with embedded `configPage.html`) and `meta.json` (`targetAbi: "12.4.0.0"`, `guid: "4c7a9d3e-6f12-4b88-9e41-2a5d8c0f7b19"`). Zero host `Jellyfin.*`, `MediaBrowser.*`, or `Microsoft.Extensions.*` assemblies are bundled.
 - **Verified Checksums (`1.0.0.0` build):**
-  - `SHA256`: `8f039a011bf43d689242ba2c1b9447e9e9affe8a4a57327ce19f58c978385dac`
-  - `MD5`: `195f324d73b8179655d6206a6b2c4d27`
+  - `SHA256`: `068ecc04bce75eb21492ea3e0be5b9cebf5edf3ddc17db13e8607163035ac07f`
+  - `MD5`: `d169e779cb0ee7b119677e30e2d92fa0`
 
 ## 8. Executed Verification Evidence
 
